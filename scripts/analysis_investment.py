@@ -91,6 +91,47 @@ ax.set_title("投资上行期预期短端利率普遍抬升，期限溢价方向
 ax.legend(loc="upper right")
 save(fig, "inv_02_episode_decomposition", "纽约联储 ACM 模型，BEA")
 
+# ---------- 1b. 分时期相关与滚动相关 ----------
+q["d4_share"] = q["nonres_share"].diff(4)
+era_rows = []
+for s0, s1, en in [("1953", "1984", "1953—1984"), ("1985", "2007", "1985—2007"), ("2008", "2026", "2008—2026")]:
+    dd = q.loc[s0:s1]
+    era_rows.append({"样本": en,
+                     "水平：投资占比 vs 10Y": dd["nonres_share"].corr(dd["GS10"]),
+                     "水平：投资占比 vs 实际利率": dd["nonres_share"].corr(dd["real10_ex_post"]),
+                     "变化：Δ投资占比 vs Δ10Y": dd["d4_share"].corr(dd["d4_GS10"]),
+                     "变化：投资增速 vs Δ10Y": dd["inv_g"].corr(dd["d4_GS10"]),
+                     "变化：投资增速 vs Δ联邦基金利率": dd["inv_g"].corr(dd["d4_FEDFUNDS"])})
+era = pd.DataFrame(era_rows).set_index("样本")
+roll_10y = q["inv_g"].rolling(40).corr(q["d4_GS10"])
+roll_ff = q["inv_g"].rolling(40).corr(q["d4_FEDFUNDS"])
+lines += ["## 1b. 分时期相关系数（非住宅投资总量）\n", era.round(2).to_markdown(), "\n",
+          "滚动 40 个季度相关（投资增速 vs Δ4 10Y）："
+          + "；".join(f"{p} {roll_10y[p]:.2f}" for p in roll_10y.dropna().index[::20]) + "\n"]
+
+fig, (a1, a2) = plt.subplots(1, 2, figsize=(13, 4.8), gridspec_kw={"width_ratios": [1.1, 1]})
+cols_e = ["水平：投资占比 vs 10Y", "变化：Δ投资占比 vs Δ10Y", "变化：投资增速 vs Δ联邦基金利率"]
+xx = np.arange(len(cols_e))
+for i, (en, c) in enumerate(zip(era.index, [C1, C2, C3])):
+    vals = era.loc[en, cols_e].values
+    a1.bar(xx + (i - 1) * 0.26, vals, 0.24, color=c, label=en)
+    for xv, v in zip(xx + (i - 1) * 0.26, vals):
+        a1.annotate(f"{v:.2f}", (xv, v), xytext=(0, 3 if v >= 0 else -11), textcoords="offset points",
+                    ha="center", fontsize=8)
+a1.axhline(0, color=INK2, lw=0.8)
+a1.set_xticks(xx, ["水平：投资占比\nvs 10年期美债", "四季度变化：投资占比\nvs 10年期美债", "四季度变化：投资增速\nvs 联邦基金利率"], fontsize=9)
+a1.set_ylabel("相关系数"); a1.set_ylim(-0.3, 1.05)
+a1.legend(loc="upper right", fontsize=9)
+a1.set_title("1984 年前投资与长端利率联动更强，与政策利率的联动各时期稳定", fontsize=11)
+rx = to_ts(roll_10y.index)
+a2.plot(rx, roll_10y, color=C1, label="投资增速 vs Δ10年期美债")
+a2.plot(rx, roll_ff, color=C3, label="投资增速 vs Δ联邦基金利率")
+a2.axhline(0, color=INK2, lw=0.8); a2.set_ylim(-0.6, 1)
+a2.set_ylabel("相关系数"); a2.legend(loc="lower left", fontsize=9)
+a2.set_title("滚动 40 个季度相关：近十年投资与长端的联动回升", fontsize=11)
+fig.tight_layout()
+save(fig, "inv_10_era_correlation", "BEA，美联储；季度数据，变化为四季度变化")
+
 # ---------- 2. 回归：投资增速对利率各分项 ----------
 lines += ["## 2. 回归：实际非住宅投资同比每上升 1 个点，利率四季度变化（bp）\n",
           "控制变量：核心通胀四季度变化、失业率缺口（失业率 − CBO 自然失业率）；Newey-West(4) 标准误。"

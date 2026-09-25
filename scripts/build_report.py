@@ -13,6 +13,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 CAPTIONS = {
     "inv_01_share_vs_yields": "投资上行期多伴随利率上行，但 2010 年后的投资扩张未能扭转利率下行趋势",
+    "inv_10_era_correlation": "1984 年前投资与长端利率联动更强，近十年联动回升",
     "inv_02_episode_decomposition": "投资上行期预期短端利率普遍抬升，期限溢价方向不定",
     "inv_03_regression_coefs": "投资提速主要推升政策利率，对期限溢价的影响为负",
     "inv_04_lead_lag": "投资增速与政策利率同步变化，对长端利率的领先性较弱",

@@ -6,7 +6,7 @@
 
 | 文件 | 内容 |
 |---|---|
-| [`REPORT.md`](REPORT.md) | **总报告：摘要、两部分分析、14 张图、结论与观察清单** |
+| [`REPORT.md`](REPORT.md) | **总报告：摘要、两部分分析、15 张图、结论与观察清单** |
 | [`01-framework.md`](01-framework.md) | 核心问题、四条传导渠道、可检验假说 |
 | [`02-episodes.md`](02-episodes.md) | 历史样本：六个阶段的事实框架与待核验清单 |
 | [`03-outline.md`](03-outline.md) | 长篇研报提纲（标题、摘要、章节、图表标题） |
@@ -16,7 +16,7 @@
 | [`07-analysis-financing.md`](07-analysis-financing.md) | **分析二：企业融资与美债利率** |
 | `scripts/` | 数据下载与分析脚本 |
 | `data/processed/` | 季度 / 月度 / 日度面板 |
-| `figures/` | 图表（14 张） |
+| `figures/` | 图表（15 张） |
 | `output/` | 脚本自动生成的数字结果 |
 
 ## 第一轮分析的主要发现
