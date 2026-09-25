@@ -108,11 +108,14 @@ def main():
     (ROOT / "REPORT.md").write_text(md, encoding="utf-8")
     print(f"REPORT.md：{n} 张图")
 
-    def render(part: str, out: Path, title: str):
+    def render(part: str, out: Path, title: str, compress: bool = True):
         html_body = markdown.markdown(part, extensions=["tables"])
 
         def embed(m):
             # 压缩为 48 色 PNG 并限制宽度，保证 HTML 体积可在预览面板中完整加载
+            if not compress:
+                b = base64.b64encode((ROOT / m.group(2)).read_bytes()).decode()
+                return f'<img alt="{m.group(1)}" src="data:image/png;base64,{b}"'
             im = Image.open(ROOT / m.group(2)).convert("RGB")
             if im.width > 1100:
                 im = im.resize((1100, round(im.height * 1100 / im.width)), Image.LANCZOS)
@@ -136,6 +139,9 @@ img{max-width:100%;height:auto;border-radius:6px;margin:.3em 0 1em;background:#f
 .tw{overflow-x:auto}table{border-collapse:collapse;font-size:.85rem;margin:.8em 0;white-space:nowrap}
 th,td{border-bottom:1px solid var(--line);padding:6px 10px;text-align:right}th:first-child,td:first-child{text-align:left}
 th{color:var(--ink2);font-weight:600}code{font-size:.85em;color:var(--ink2);white-space:normal}
+@media print{:root{--bg:#fff;--ink:#000;--ink2:#444;--line:#ddd}body{padding:0}main{max-width:none}
+img,table,.tw{break-inside:avoid}h1,h2{break-after:avoid}p:has(+p>img){break-after:avoid}.tw{overflow:visible}}
+@page{size:A4;margin:16mm 14mm}
 """
         html = (f'<!doctype html><html lang="zh"><head><meta charset="utf-8">'
                 f'<meta name="viewport" content="width=device-width,initial-scale=1">'
@@ -147,6 +153,7 @@ th{color:var(--ink2);font-weight:600}code{font-size:.85em;color:var(--ink2);whit
     if len(sys.argv) > 1:
         out = Path(sys.argv[1])
         render(md, out, "企业投资与美债利率")
+        render(md, out.with_name(out.stem + "_完整高清.html"), "企业投资与美债利率", compress=False)
         # 预览面板约 1MB 截断，另拆为上下两篇
         cut = md.index("\n# 二、")
         render(md[:cut], out.with_name(out.stem + "_上篇.html"), "企业投资与美债利率（上）")
