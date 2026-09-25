@@ -162,6 +162,64 @@ a2.plot(to_ts(qq.index), qq["hlw_rstar"], color=C2, label="HLW 中性利率 r*")
 a2.axhline(0, color=INK2, lw=0.8); a2.set_ylabel("%"); a2.legend(loc="upper right")
 save(fig, "inv_05_intangibles_rstar", "BEA，纽约联储 HLW 模型")
 
+# ---------- 4b. 有形投资（建筑 + 设备）与利率 ----------
+tg = q.loc["1953Q2":].copy()
+for c in ["tangible_share", "ipp_share", "GS10", "real10_ex_post", "acm_tp10", "FEDFUNDS"]:
+    tg["d4_" + c] = tg[c].diff(4)
+rates = [("GS10", "10年期名义利率"), ("real10_ex_post", "10年期实际利率"), ("acm_tp10", "ACM 期限溢价"),
+         ("FEDFUNDS", "联邦基金利率")]
+eras3 = [("1953", "1984", "1953—1984"), ("1985", "2007", "1985—2007"), ("2008", "2026", "2008—2026"),
+         ("1953", "2026", "全样本")]
+for xv, xn in [("tangible_share", "有形投资（建筑+设备）/GDP"), ("ipp_share", "知识产权产品投资/GDP")]:
+    rows = []
+    for s0, s1, en in eras3:
+        dd = tg.loc[s0:s1]
+        r = {"样本": en}
+        for yv, yn in rates:
+            r[f"水平：{yn}"] = dd[xv].corr(dd[yv])
+            r[f"四季度变化：{yn}"] = dd["d4_" + xv].corr(dd["d4_" + yv])
+        rows.append(r)
+    lines += [f"## 4b. {xn} 与利率的相关系数\n", pd.DataFrame(rows).round(2).to_markdown(index=False), "\n"]
+last_t = tg["tangible_share"].last_valid_index()
+lines += [f"有形投资/GDP：1981Q4 {tg.at[pd.Period('1981Q4', 'Q'), 'tangible_share']:.2f}%，"
+          f"2000Q4 {tg.at[pd.Period('2000Q4', 'Q'), 'tangible_share']:.2f}%，"
+          f"2019Q3 {tg.at[pd.Period('2019Q3', 'Q'), 'tangible_share']:.2f}%，"
+          f"{last_t} {tg.at[last_t, 'tangible_share']:.2f}%"
+          f"（建筑 {tg.at[last_t, 'structures_share']:.2f}%，设备 {tg.at[last_t, 'equipment_share']:.2f}%）。\n"]
+
+# 图6：有形投资（右轴）分别对照实际利率、名义利率、期限溢价（左轴）
+fig, axes = plt.subplots(3, 1, figsize=(11, 10.5), sharex=True)
+x = to_ts(tg.index)
+panels = [("GS10", "10年期美债收益率", C1, (0, 16)),
+          ("real10_ex_post", "10年期实际利率（减核心通胀）", C2, (-4, 10)),
+          ("acm_tp10", "ACM 10年期期限溢价", C1, (-2, 5.5))]
+for ax, (yv, yn, col, yl) in zip(axes, panels):
+    la, = ax.plot(x, tg[yv], color=col, label=f"{yn}（左轴）")
+    ax.axhline(0, color=INK2, lw=0.8)
+    ax.set_ylim(*yl); ax.set_ylabel("%")
+    axr = ax.twinx()
+    lb, = axr.plot(x, tg["tangible_share"], color=C3, lw=2.4, label="有形投资（建筑+设备）/GDP（右轴）")
+    axr.set_ylim(6, 14.5); axr.set_ylabel("投资/GDP（%）"); axr.grid(False)
+    axr.spines["right"].set_visible(True)
+    ax.legend(handles=[lb, la], loc="upper left", ncol=2, fontsize=9)
+axes[0].set_title("有形投资与名义利率长期同向，2008 年后联动减弱")
+save(fig, "inv_06_tangible_vs_rates", "BEA，美联储，纽约联储 ACM；有形投资 = 非住宅建筑 + 设备")
+
+# 图7：散点（水平），按时期着色
+fig, axes = plt.subplots(1, 3, figsize=(13, 4.6))
+cols = [C1, C2, C3]
+for ax, (yv, yn, _, _) in zip(axes, panels):
+    for (s0, s1, en), c in zip(eras3[:3], cols):
+        dd = tg.loc[s0:s1, ["tangible_share", yv]].dropna()
+        ax.scatter(dd["tangible_share"], dd[yv], s=14, color=c, alpha=0.75, edgecolors="none",
+                   label=f"{en}（r={dd.corr().iloc[0, 1]:.2f}）")
+    ax.axhline(0, color=INK2, lw=0.8)
+    ax.set_xlabel("有形投资/GDP（%）"); ax.set_ylabel(f"{yn}（%）")
+    ax.legend(loc="upper left", fontsize=8, handletextpad=0.2)
+axes[0].set_title("2008 年前有形投资与名义利率正相关，2008 年后关系消失", fontsize=11)
+fig.tight_layout()
+save(fig, "inv_07_tangible_scatter", "BEA，美联储，纽约联储 ACM；季度数据")
+
 # ---------- 5. 最新读数 ----------
 last = q.dropna(subset=["nonres_share"]).index[-1]
 lines += ["## 5. 最新读数\n",

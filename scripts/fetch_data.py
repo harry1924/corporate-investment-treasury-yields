@@ -44,6 +44,8 @@ FRED = {
     "A008RL1Q225SBEA": "实际非住宅固定投资环比折年（%）",
     "A679RC1Q027SBEA": "信息处理设备与软件投资（季，十亿美元SAAR）",
     "Y001RC1Q027SBEA": "知识产权产品投资（季，十亿美元SAAR）",
+    "B009RC1Q027SBEA": "非住宅建筑投资（季，十亿美元SAAR）",
+    "Y033RC1Q027SBEA": "非住宅设备投资（季，十亿美元SAAR）",
 }
 
 # Z.1 序列：季度，百万美元；FA=交易流量（季调折年），FL=存量（期末）
@@ -149,10 +151,11 @@ def main():
     # ---- 季度面板 ----
     q = m.resample("QS").mean()
     qcols = ["GDP", "PNFI", "A008RE1Q156NBEA", "A008RL1Q225SBEA",
-             "A679RC1Q027SBEA", "Y001RC1Q027SBEA", "NROU"]
+             "A679RC1Q027SBEA", "Y001RC1Q027SBEA", "B009RC1Q027SBEA", "Y033RC1Q027SBEA", "NROU"]
     q = q.join(pd.concat({k: fred[k] for k in qcols}, axis=1))
     q = q.rename(columns={"A008RE1Q156NBEA": "nonres_share", "A008RL1Q225SBEA": "real_nonres_qoq_saar",
-                          "A679RC1Q027SBEA": "info_equip_sw", "Y001RC1Q027SBEA": "ipp"})
+                          "A679RC1Q027SBEA": "info_equip_sw", "Y001RC1Q027SBEA": "ipp",
+                          "B009RC1Q027SBEA": "structures", "Y033RC1Q027SBEA": "equipment"})
     q["hlw_rstar"] = hlw
     q.index = q.index.to_period("Q")
     q.index.name = "quarter"
@@ -166,6 +169,10 @@ def main():
         q[c + "_gdp"] = q[c] / gdp_mn * 100
     q["info_share"] = q["info_equip_sw"] / q["GDP"] * 100
     q["ipp_share"] = q["ipp"] / q["GDP"] * 100
+    # 有形投资 = 建筑 + 设备（= 非住宅投资 − 知识产权产品）
+    q["tangible_share"] = (q["structures"] + q["equipment"]) / q["GDP"] * 100
+    q["structures_share"] = q["structures"] / q["GDP"] * 100
+    q["equipment_share"] = q["equipment"] / q["GDP"] * 100
     q["unemp_gap"] = q["UNRATE"] - q["NROU"]
     q.to_csv(PROC / "quarterly.csv")
 
