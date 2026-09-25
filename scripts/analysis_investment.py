@@ -7,7 +7,7 @@
 import numpy as np
 import pandas as pd
 
-from common import (C1, C2, C3, INK2, SHADE, OUT, fmt_coef, load_q, ols_nw, plt, save, stars, to_ts)
+from common import (C1, C2, C3, INK, INK2, SHADE, OUT, fmt_coef, load_q, ols_nw, plt, save, stars, to_ts)
 
 q = load_q()
 q["inv_g"] = q["real_nonres_qoq_saar"].rolling(4).mean()  # 实际非住宅投资同比（近似）
@@ -219,6 +219,61 @@ for ax, (yv, yn, _, _) in zip(axes, panels):
 axes[0].set_title("2008 年前有形投资与名义利率正相关，2008 年后关系消失", fontsize=11)
 fig.tight_layout()
 save(fig, "inv_07_tangible_scatter", "BEA，美联储，纽约联储 ACM；季度数据")
+
+# ---------- 4c. 稳健性：“资本开支增速 vs 债券收益率”类图表的美国复现 ----------
+def cagr5(x):
+    return ((x / x.shift(20)) ** (1 / 5) - 1) * 100
+
+
+cg = q.copy()
+cg["capex_nom"] = cagr5(cg["PNFI"])
+cg["capex_real"] = cagr5(cg["PNFI"] / cg["nonres_deflator"])
+cg["ngdp"] = cagr5(cg["GDP"])
+cg["capex_excess"] = cg["capex_nom"] - cg["ngdp"]
+measures = [("capex_nom", "名义资本开支 5 年年化增速"), ("capex_real", "实际资本开支 5 年年化增速"),
+            ("ngdp", "名义 GDP 5 年年化增速"), ("capex_excess", "资本开支增速超出名义 GDP 的部分")]
+samples = [("1957", "2026", "1957—2026"), ("1986", "2026", "1986—2026"),
+           ("1986", "2007", "1986—2007"), ("2008", "2026", "2008—2026")]
+ctab = pd.DataFrame({sn: {mn: cg.loc[s0:s1, mv].corr(cg.loc[s0:s1, "GS10"]) for mv, mn in measures}
+                     for s0, s1, sn in samples})
+lines += ["## 4c. 稳健性：5 年年化增速与 10 年期美债收益率（水平）的相关系数\n",
+          "口径参照 Topdown Charts “Global Capex vs Bond Yields”，以美国非住宅固定投资复现。\n",
+          ctab.round(2).to_markdown(), "\n"]
+lc = cg["capex_nom"].last_valid_index()
+lines += [f"最新（{lc}）：名义资本开支 5 年年化增速 {cg.at[lc, 'capex_nom']:.1f}%，实际 {cg.at[lc, 'capex_real']:.1f}%，"
+          f"名义 GDP {cg.at[lc, 'ngdp']:.1f}%；2021Q1 分别为 {cg.at[pd.Period('2021Q1', 'Q'), 'capex_nom']:.1f}%、"
+          f"{cg.at[pd.Period('2021Q1', 'Q'), 'capex_real']:.1f}%、{cg.at[pd.Period('2021Q1', 'Q'), 'ngdp']:.1f}%。\n"]
+
+# 图8：三栏，左轴增速、右轴 10 年期美债
+fig, axes = plt.subplots(3, 1, figsize=(11, 10.5), sharex=True)
+cc = cg.loc["1957Q1":]
+x = to_ts(cc.index)
+for ax, (mv, mn), col in zip(axes, [measures[0], measures[2], measures[1]], [C1, C2, C3]):
+    la, = ax.plot(x, cc[mv], color=col, lw=2.2, label=f"{mn}（左轴）")
+    ax.axhline(0, color=INK2, lw=0.8)
+    ax.set_ylim(-6, 21); ax.set_ylabel("%")
+    axr = ax.twinx()
+    lb, = axr.plot(x, cc["GS10"], color=INK, lw=1.6, label="10年期美债收益率（右轴）")
+    axr.set_ylim(-3, 20); axr.set_ylabel("%"); axr.grid(False)
+    axr.spines["right"].set_visible(True)
+    ax.axvline(pd.Timestamp("1986-01-01"), color=INK2, lw=0.8, ls=":")
+    ax.legend(handles=[la, lb], loc="upper left", ncol=2, fontsize=9)
+    ax.text(0.99, 0.95, f"相关系数：1957—2026 年 {ctab.at[mn, '1957—2026']:.2f}；1986—2026 年 {ctab.at[mn, '1986—2026']:.2f}",
+            transform=ax.transAxes, ha="right", va="top", fontsize=9, color=INK2)
+axes[0].set_title("剔除通胀后，资本开支增速与美债收益率的同步性基本消失；名义 GDP 增速的解释力更强")
+save(fig, "inv_08_capex_cagr_vs_yield", "BEA，美联储；5 年年化增速，季度；虚线为 1986 年（Topdown 原图起点）")
+
+# 图9：相关系数对比
+fig, ax = plt.subplots(figsize=(10, 4.4))
+yy = np.arange(len(measures))[::-1]
+for off, (sn, c) in zip([0.27, 0.09, -0.09, -0.27], zip(ctab.columns, [INK2, C1, C2, C3])):
+    ax.barh(yy + off, ctab[sn].values, 0.17, color=c, label=sn)
+ax.axvline(0, color=INK2, lw=0.8)
+ax.set_yticks(yy, [mn for _, mn in measures])
+ax.set_xlabel("与 10 年期美债收益率（水平）的相关系数")
+ax.set_title("与美债收益率同步的主要是名义增长，资本开支本身的解释力有限")
+ax.legend(loc="lower right", fontsize=9)
+save(fig, "inv_09_cagr_corr", "BEA，美联储；季度数据")
 
 # ---------- 5. 最新读数 ----------
 last = q.dropna(subset=["nonres_share"]).index[-1]
