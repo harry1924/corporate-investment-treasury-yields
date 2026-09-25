@@ -3,11 +3,13 @@
 用法：python scripts/build_report.py [HTML 输出路径]
 """
 import base64
+import io
 import re
 import sys
 from pathlib import Path
 
 import markdown
+from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -110,7 +112,13 @@ def main():
         html_body = markdown.markdown(md, extensions=["tables"])
 
         def embed(m):
-            b = base64.b64encode((ROOT / m.group(2)).read_bytes()).decode()
+            # 压缩为 256 色 PNG 并限制宽度，保证 HTML 体积可在预览面板中完整加载
+            im = Image.open(ROOT / m.group(2)).convert("RGB")
+            if im.width > 1200:
+                im = im.resize((1200, round(im.height * 1200 / im.width)), Image.LANCZOS)
+            buf = io.BytesIO()
+            im.quantize(colors=96, method=Image.Quantize.MEDIANCUT).save(buf, "PNG", optimize=True)
+            b = base64.b64encode(buf.getvalue()).decode()
             return f'<img alt="{m.group(1)}" src="data:image/png;base64,{b}"'
 
         html_body = re.sub(r'<img alt="([^"]*)" src="([^"]+)"', embed, html_body)
