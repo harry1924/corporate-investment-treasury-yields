@@ -108,16 +108,16 @@ def main():
     (ROOT / "REPORT.md").write_text(md, encoding="utf-8")
     print(f"REPORT.md：{n} 张图")
 
-    if len(sys.argv) > 1:
-        html_body = markdown.markdown(md, extensions=["tables"])
+    def render(part: str, out: Path, title: str):
+        html_body = markdown.markdown(part, extensions=["tables"])
 
         def embed(m):
-            # 压缩为 256 色 PNG 并限制宽度，保证 HTML 体积可在预览面板中完整加载
+            # 压缩为 48 色 PNG 并限制宽度，保证 HTML 体积可在预览面板中完整加载
             im = Image.open(ROOT / m.group(2)).convert("RGB")
-            if im.width > 1200:
-                im = im.resize((1200, round(im.height * 1200 / im.width)), Image.LANCZOS)
+            if im.width > 1100:
+                im = im.resize((1100, round(im.height * 1100 / im.width)), Image.LANCZOS)
             buf = io.BytesIO()
-            im.quantize(colors=96, method=Image.Quantize.MEDIANCUT).save(buf, "PNG", optimize=True)
+            im.quantize(colors=48, method=Image.Quantize.MEDIANCUT).save(buf, "PNG", optimize=True)
             b = base64.b64encode(buf.getvalue()).decode()
             return f'<img alt="{m.group(1)}" src="data:image/png;base64,{b}"'
 
@@ -139,10 +139,19 @@ th{color:var(--ink2);font-weight:600}code{font-size:.85em;color:var(--ink2);whit
 """
         html = (f'<!doctype html><html lang="zh"><head><meta charset="utf-8">'
                 f'<meta name="viewport" content="width=device-width,initial-scale=1">'
-                f'<title>企业投资与美债利率</title><style>{css}</style></head>'
+                f'<title>{title}</title><style>{css}</style></head>'
                 f'<body><main>{html_body}</main></body></html>')
-        Path(sys.argv[1]).write_text(html, encoding="utf-8")
-        print(f"HTML：{sys.argv[1]}（{len(html) // 1024} KB）")
+        out.write_text(html, encoding="utf-8")
+        print(f"HTML：{out}（{len(html) // 1024} KB）")
+
+    if len(sys.argv) > 1:
+        out = Path(sys.argv[1])
+        render(md, out, "企业投资与美债利率")
+        # 预览面板约 1MB 截断，另拆为上下两篇
+        cut = md.index("\n# 二、")
+        render(md[:cut], out.with_name(out.stem + "_上篇.html"), "企业投资与美债利率（上）")
+        render("# 企业投资会抬升美债利率吗？（下篇）\n" + md[cut:], out.with_name(out.stem + "_下篇.html"),
+               "企业投资与美债利率（下）")
 
 
 if __name__ == "__main__":
