@@ -56,21 +56,21 @@ ep = pd.DataFrame(rows).set_index("阶段")
 lines += ["## 1. 投资上行周期（非住宅投资/GDP 四季度均值，拐点阈值 0.8 个点）\n",
           "ACM 分解在 1961Q3 之前无数据，首段起点取 1961Q3。\n", ep.to_markdown(floatfmt=(".0f", ".1f", ".0f", ".0f", ".0f", ".0f", ".0f")), "\n"]
 
-# 图1：投资占比与利率（上下两栏，同一时间轴）
-fig, (a1, a2) = plt.subplots(2, 1, figsize=(10, 6.4), sharex=True, gridspec_kw={"height_ratios": [1, 1.2]})
+# 图1：投资占比与利率放在同一张图（三者单位均为 %，共用一根纵轴）
+fig, ax = plt.subplots(figsize=(11, 5.2))
 for a, b in ups:
-    for ax in (a1, a2):
-        ax.axvspan(a.to_timestamp(), b.to_timestamp(how="end"), color=SHADE, lw=0, zorder=0)
+    ax.axvspan(a.to_timestamp(), b.to_timestamp(how="end"), color=SHADE, lw=0, zorder=0)
 qq = q.loc["1953Q2":]
-a1.plot(to_ts(qq.index), qq["nonres_share"], color=C1)
-a1.set_title("投资上行期多伴随利率上行，但 2010 年后的投资扩张未能扭转利率下行趋势")
-a1.set_ylabel("非住宅固定投资/GDP（%）")
-a2.plot(to_ts(qq.index), qq["GS10"], color=C1, label="10年期美债收益率")
-a2.plot(to_ts(qq.index), qq["real10_ex_post"], color=C2, label="10年期实际利率（减核心通胀）")
-a2.axhline(0, color=INK2, lw=0.8)
-a2.set_ylabel("%")
-a2.legend(loc="upper right")
-a1.text(0.99, 0.95, "阴影：投资占比上行阶段", transform=a1.transAxes, ha="right", va="top", fontsize=8, color=INK2)
+x = to_ts(qq.index)
+ax.plot(x, qq["nonres_share"], color=C3, lw=2.4, label="非住宅固定投资/GDP")
+ax.plot(x, qq["GS10"], color=C1, label="10年期美债收益率")
+ax.plot(x, qq["real10_ex_post"], color=C2, label="10年期实际利率（减核心通胀）")
+ax.axhline(0, color=INK2, lw=0.8)
+ax.set_ylabel("%")
+ax.set_ylim(-4, 17)
+ax.set_title("投资上行期多伴随利率上行，但 2010 年后的投资扩张未能扭转利率下行趋势")
+ax.legend(loc="upper left", ncol=3)
+ax.text(0.99, 0.97, "阴影：投资占比上行阶段", transform=ax.transAxes, ha="right", va="top", fontsize=8, color=INK2)
 save(fig, "inv_01_share_vs_yields", "BEA，美联储，FRED")
 
 # 图2：各投资上行期的利率分解
