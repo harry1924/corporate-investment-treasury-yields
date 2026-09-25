@@ -1,0 +1,3 @@
+data/raw/*.xls
+data/raw/*.xlsx
+__pycache__/
