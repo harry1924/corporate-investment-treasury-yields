@@ -44,7 +44,7 @@ python scripts/analysis_investment.py # 分析一
 python scripts/analysis_financing.py  # 分析二
 python scripts/financing_gap_long.py  # 融资缺口长序列（1929 年起）
 python scripts/net_issuance.py        # 企业净发债、国债净发行与利率
-python scripts/long_duration_supply.py # 10 年及以上国债供给（财政部 MSPD / 拍卖数据）
+python scripts/long_duration_supply.py # 10 年及以上国债净供给（财政部 MSPD / 拍卖数据，纽约联储 SOMA）
 python scripts/build_report.py        # 合并为 REPORT.md
 ```
 
