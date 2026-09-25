@@ -6,7 +6,7 @@
 
 | 文件 | 内容 |
 |---|---|
-| [`REPORT.md`](REPORT.md) · [`REPORT.pdf`](REPORT.pdf) · [`REPORT.html`](REPORT.html) | **总报告：摘要、两部分分析、20 张图、结论与观察清单（PDF / 高清 HTML 可下载）** |
+| [`REPORT.md`](REPORT.md) · [`REPORT.pdf`](REPORT.pdf) · [`REPORT.html`](REPORT.html) | **总报告：摘要、两部分分析、23 张图、结论与观察清单（PDF / 高清 HTML 可下载）** |
 | [`01-framework.md`](01-framework.md) | 核心问题、四条传导渠道、可检验假说 |
 | [`02-episodes.md`](02-episodes.md) | 历史样本：六个阶段的事实框架与待核验清单 |
 | [`03-outline.md`](03-outline.md) | 长篇研报提纲（标题、摘要、章节、图表标题） |
@@ -16,7 +16,7 @@
 | [`07-analysis-financing.md`](07-analysis-financing.md) | **分析二：企业融资与美债利率** |
 | `scripts/` | 数据下载与分析脚本 |
 | `data/processed/` | 季度 / 月度 / 日度面板 |
-| `figures/` | 图表（20 张） |
+| `figures/` | 图表（23 张） |
 | `output/` | 脚本自动生成的数字结果 |
 
 ## 第一轮分析的主要发现
@@ -44,6 +44,7 @@ python scripts/analysis_investment.py # 分析一
 python scripts/analysis_financing.py  # 分析二
 python scripts/financing_gap_long.py  # 融资缺口长序列（1929 年起）
 python scripts/net_issuance.py        # 企业净发债、国债净发行与利率
+python scripts/long_duration_supply.py # 10 年及以上国债供给（财政部 MSPD / 拍卖数据）
 python scripts/build_report.py        # 合并为 REPORT.md
 ```
 
