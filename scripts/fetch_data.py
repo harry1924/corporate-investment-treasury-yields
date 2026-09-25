@@ -62,6 +62,11 @@ Z1 = {
     "FL104135005.Q": "nfc_loan_level",
     "FA313161105.Q": "ust_flow",               # 可流通美债净发行
     "FL313161105.Q": "ust_level",
+    "FA103169100.Q": "nfc_cp_flow",            # 商业票据净发行（短期）
+    "FA313161110.Q": "ust_bill_flow",          # 国库券净发行（短期）
+    "FA313161275.Q": "ust_coupon_flow",        # 附息国债（中长期票据+债券）净发行
+    "FL313161275.Q": "ust_coupon_level",
+    "FA713061125.Q": "fed_coupon_flow",        # 美联储净买入附息国债
 }
 
 Z1_URL = "https://www.federalreserve.gov/releases/z1/current/z1_csv_files.zip"
@@ -164,9 +169,10 @@ def main():
     q = q.join(z1)
     gdp_mn = q["GDP"] * 1000  # 十亿美元 -> 百万美元，与 Z.1 对齐
     for c in ["nfc_net_lending", "nfc_financing_gap", "nfc_capex", "nfc_debtsec_flow",
-              "nfc_bond_flow", "nfc_loan_flow", "ust_flow"]:
+              "nfc_bond_flow", "nfc_loan_flow", "ust_flow", "nfc_cp_flow", "ust_bill_flow",
+              "ust_coupon_flow", "fed_coupon_flow"]:
         q[c + "_gdp"] = q[c] / gdp_mn * 100
-    for c in ["nfc_debtsec_level", "nfc_bond_level", "nfc_loan_level", "ust_level"]:
+    for c in ["nfc_debtsec_level", "nfc_bond_level", "nfc_loan_level", "ust_level", "ust_coupon_level"]:
         # 存量 / 年化 GDP
         q[c + "_gdp"] = q[c] / gdp_mn * 100
     q["info_share"] = q["info_equip_sw"] / q["GDP"] * 100
